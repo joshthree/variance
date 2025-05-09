@@ -1022,7 +1022,7 @@ abstract public class VarianceToolkit {
 		for(int i = 0; i < n; i++) {
 			proof[i] = oneProof;
 		}
-		andOuter[0] = new ZeroKnowledgeOrProver(proof);
+		andOuter[0] = new ZeroKnowledgeAndProver(proof);
 		andOuter[1] = commitmentProtocol;
 		return new ZeroKnowledgeAndProver(andOuter);
 	}
@@ -1070,7 +1070,7 @@ abstract public class VarianceToolkit {
 		if(n < k || publicKeys.length != n)
 		{
 			throw new ArrayIndexOutOfBoundsException();
-		}
+		}	
 		ECCurve c = commitmentEnvirionment.getCryptoDataArray()[0].getECCurveData();
 		ECPoint g = commitmentEnvirionment.getCryptoDataArray()[0].getECPointData(c);
 		if(n != 1)
@@ -1087,9 +1087,9 @@ abstract public class VarianceToolkit {
 			for(int i = 0; i < n; i++) {
 				CryptoData[] andInner = new CryptoData[2];
 				CryptoData[] or = new CryptoData[2];
-				andInner[0] = new ECPointData(commitments[i].getCommitment(commitmentEnvirionment).subtract(g));
+				andInner[0] = new CryptoDataArray(new CryptoData[] {new ECPointData(commitments[i].getCommitment(commitmentEnvirionment).subtract(g))});
 				andInner[1] = inner[i];
-				or[0] = new ECPointData(commitments[i].getCommitment(commitmentEnvirionment));
+				or[0] = new CryptoDataArray(new CryptoData[] {new ECPointData(commitments[i].getCommitment(commitmentEnvirionment))});
 				or[1] = new CryptoDataArray(andInner);
 				toReturn[i] = new CryptoDataArray(or);
 			}
@@ -1099,7 +1099,7 @@ abstract public class VarianceToolkit {
 			for(int i = 1; i < n; i++){
 				otherTotalComm = otherTotalComm.multiplyCommitment(commitments[i], commitmentEnvirionment);
 			}
-			andOuter[1] = createSchnorrVerifierInputsNoChecks(new ECPointData(otherTotalComm.getCommitment(commitmentEnvirionment)));
+			andOuter[1] = createSchnorrVerifierInputsNoChecks(new ECPointData(otherTotalComm.getCommitment(commitmentEnvirionment).add(g.multiply(BigInteger.valueOf(-k)))));
 			return new CryptoDataArray(andOuter);
 		}
 		
@@ -1157,14 +1157,14 @@ abstract public class VarianceToolkit {
 			for(int i = 0; i < n; i++) {
 				CryptoData[] andInner = new CryptoData[2];
 				CryptoData[] or = new CryptoData[3];
-				if(positions[counter] == i)
+				if(counter < k && positions[counter] == i)
 				{
 					andInner[0] = createSchnorrProverInputsNoChecks(new ECPointData(commitments[i].getCommitment(baseEnvironment).subtract(g)), new BigIntData(ephemeralKey[i]), order, rand);
-					if(privateKeys[positions[counter]] == null) {
+					if(privateKeys[counter] == null) {
 						andInner[1] = null;
 					}
 					else{
-						andInner[1] = createSchnorrProverInputsNoChecks(publicKeys[i], privateKeys[positions[counter]], order, rand);
+						andInner[1] = createSchnorrProverInputsNoChecks(publicKeys[i], privateKeys[counter], order, rand);
 					}
 					or[0] = createSchnorrSimulatorInputsNoChecks(new ECPointData(commitments[i].getCommitment(baseEnvironment)), order, rand);
 					or[1] = new CryptoDataArray(andInner);
@@ -1188,7 +1188,7 @@ abstract public class VarianceToolkit {
 				totalComm = totalComm.multiplyCommitment(commitments[i], baseEnvironment);
 				totalKey = totalKey.add(ephemeralKey[i]);
 			}
-			andOuter[1] = createSchnorrProverInputsNoChecks(new ECPointData(totalComm.getCommitment(baseEnvironment)), new BigIntData(totalKey), order, rand);
+			andOuter[1] = createSchnorrProverInputsNoChecks(new ECPointData(totalComm.getCommitment(baseEnvironment).add(g.multiply(BigInteger.valueOf(-k)))), new BigIntData(totalKey), order, rand);
 			return new CryptoDataArray(andOuter);
 		}
 		else 
@@ -1250,7 +1250,7 @@ abstract public class VarianceToolkit {
 			for(int i = 1; i < n; i++){
 				totalComm = totalComm.multiplyCommitment(commitments[i], baseEnvironment);
 			}
-			andOuter[1] = createSchnorrSimulatorInputsNoChecks(new ECPointData(totalComm.getCommitment(baseEnvironment)), order, rand);
+			andOuter[1] = createSchnorrSimulatorInputsNoChecks(new ECPointData(totalComm.getCommitment(baseEnvironment).add(g.multiply(BigInteger.valueOf(-k)))), order, rand);
 			return new CryptoDataArray(andOuter);
 		}
 		else return createSchnorrSimulatorInputsNoChecks(publicKeys[0], order, rand);

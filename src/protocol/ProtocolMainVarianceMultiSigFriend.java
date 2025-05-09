@@ -71,15 +71,15 @@ public class ProtocolMainVarianceMultiSigFriend {
 			return;
 		}
 		try {
-			fis = new FileInputStream(args[3]);
+			fis = new FileInputStream("inputs/"+args[3]);
 			isr = new InputStreamReader(fis);
 			br = new BufferedReader(isr);
 
-			keyFile = new FileInputStream(args[4]);
+			keyFile = new FileInputStream("inputs/"+args[4]);
 			isr2 = new InputStreamReader(keyFile);
 			keyBr = new BufferedReader(isr2);
 
-			envFile = new FileInputStream(args[5]);
+			envFile = new FileInputStream("inputs/"+args[5]);
 			isr3 = new InputStreamReader(envFile);
 			envBr = new BufferedReader(isr3);
 		} catch (FileNotFoundException e1) {
@@ -103,6 +103,7 @@ public class ProtocolMainVarianceMultiSigFriend {
 			Decoder decoder = Base64.getDecoder();
 			System.out.println("Attempting to connect to main party");
 			boolean flag2 = true;
+			int blahman = 0;
 			while(flag2)
 			{
 				try {
@@ -120,12 +121,24 @@ public class ProtocolMainVarianceMultiSigFriend {
 					else {
 						System.out.println("They said no.  Sleeping for 5 seconds");
 						Thread.sleep(5000);
-						System.out.println("Trying again...");
+						System.out.println("Trying again 1...");
 						toLeader.close();
 						toLeader = null;
 					}
 				} catch (Exception e) {
-					System.out.println("Trying again...");
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+//					e.printStackTrace(System.out);
+//					System.out.println(leaderIP);
+//					System.out.println(leaderPort);
+//					System.out.println("Trying again 2...");
+					if(blahman++ == 5) {
+						System.out.println("friend having trouble");
+					}
 				}
 			}
 			CryptoData environment = new CryptoDataArray(new CryptoData[] {new ECCurveData(curve, g)});

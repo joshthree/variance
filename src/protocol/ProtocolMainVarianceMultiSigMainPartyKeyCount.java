@@ -593,10 +593,11 @@ public class ProtocolMainVarianceMultiSigMainPartyKeyCount {
 							else {
 								verify = provers[n-1][k-1].parallelZKProveWithFriends(proverInput[i], verifierInput[i], environments[n-1][k-1], mainIn, mainOut, myCmt, miniEnv, c, friendsOut, friendsIn, request, transcript);
 							}
-						}catch (NullPointerException e) {
+						}catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
 							e.printStackTrace();
 							System.out.println(proverInput[i]);
 							System.out.println(verifierInput[i]);
+							System.out.println(provers[n-1][k-1]);
 							System.exit(1);
 						}
 //						if(verify)

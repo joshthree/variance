@@ -10,8 +10,8 @@ public class ECPointAdd {
 	{
 		
 		ECPoint g = ECNamedCurveTable.getParameterSpec("secp256k1").getG();
-		
 		ECCurve curve = g.getCurve();
+		System.out.println(curve.getOrder());
 		Scanner in = new Scanner(System.in);
 		System.out.println("Point x1:");
 		BigInteger x1, y1, x2, y2;

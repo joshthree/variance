@@ -161,7 +161,7 @@ public class ProtocolMainVarianceSingleKey {
 
 		Writer arg0 = null;
 		try {
-			arg0 = new FileWriter("output/Verifier_Transcript_" + args[3] + "_Variance");
+			arg0 = new FileWriter("outputs/Verifier_Transcript_" + args[3] + "_Variance");
 		} catch (IOException e) {
 			
 			e.printStackTrace();
@@ -383,7 +383,7 @@ public class ProtocolMainVarianceSingleKey {
 
 
 		
-
+		System.out.println("I own " + sum + " bitcoins.");
 		if(verify)
 			System.out.println("Success!  I believe the proof of assets");
 		else 
@@ -400,218 +400,11 @@ public class ProtocolMainVarianceSingleKey {
 //		BigInteger otherSum = (BigInteger) in.readObject();
 //		BigInteger otherKeySum = (BigInteger) in.readObject();
 		//Convert to Bits:
-
-		
-		ECPedersenOwnedBitwiseCommitment ecBits = null;
-		
-		int numBits = 51;
-		
-		ecBits = VarianceToolkit.ecConvertToBits(sum, sumKey, numBits, miniEnv, r);
-
-		ECPedersenCommitment[] otherECBits = null;
-
-		ECPedersenCommitment[] ecBitComm = ecBits.getComm();
-		BigInteger[] ecBitKeys = ecBits.getKeys();
-		
-		out.writeObject(ecBitComm);
-		otherECBits = (ECPedersenCommitment[]) in.readObject();
-		
-		if(!VarianceToolkit.checkBitCommitment(othersSumCommitment, otherECBits, miniEnv)) System.out.println("LIAR!!! BIT COMMITMENTS DO NOT MATCH THEIR SUM");
-		else System.out.println("Bit Commitments Correct");
-		CryptoData[][] table = VarianceToolkit.getBasicTable(miniEnv);
-		CryptoData[][] newTable;
-		
-		BigInteger[] keys = new BigInteger[4];
-		CryptoData tableProofEnv = VarianceToolkit.getTableProofEnvironment(miniEnv);
-		CryptoData shuffleProofEnv = VarianceToolkit.getShuffleProofEnvironment(miniEnv);
-
-		for(int j = 0; j < 4; j++)
-		{
-			keys[j] = new BigInteger(bitLength, r);
-			while(keys[j].compareTo(order) >= 0)
-				keys[j] = new BigInteger(bitLength, r);
-		}
-		
-		CryptoData[] encryptions = VarianceToolkit.createTableCommitments(table[1], keys, ecBits.getMessage().testBit(numBits-1 - 0), host == null, miniEnv);
-		CryptoData pInputs = VarianceToolkit.getTableCoorespondenceProverData(table[1], encryptions, keys, new ECPointData(ecBitComm[numBits-1 - 0].getCommitment(miniEnv)), ecBitKeys[(numBits-1) - 0], ecBits.getMessage().testBit((numBits-1) - 0), host != null, miniEnv, r);
-		out.writeObject(encryptions);
-		CryptoData[] otherEncryptions = (CryptoData[]) in.readObject();
-		CryptoData vInputs = VarianceToolkit.getTableCoorespondenceVerifierData(table[1], otherEncryptions, new ECPointData(otherECBits[numBits-1 - 0].getCommitment(miniEnv)), host == null, miniEnv);
-
-		BigInteger random;
-		random = new BigInteger(bitLength, r);
-		while(random.compareTo(order) >= 0)
-		{
-			random = new BigInteger(bitLength, r);
-		}
-		BigInteger[] c = {new BigInteger(bitLength - 1, r), random};
-		ECPedersenCommitment myCmt = new ECPedersenCommitment(c[0], c[1], miniEnv);
-		ObjectInputStream[] inArray = {in}; 
-		ObjectOutputStream[] outArray = {out}; 
-		if(VarianceToolkit.consistantTableEncryptionProver.parallelZKProve(pInputs, vInputs, tableProofEnv, in, out, myCmt, miniEnv, c, null))
-		{
-		}
-		else System.out.println("boooooo...");
-		ECPoint[] feedback = new ECPoint[2];
-		int[] shuffle = new int[3];
-		BigInteger[][] keyChanges = new BigInteger[3][5];
-		
-		ECPoint inf = curve.getInfinity();
-		for(int i = 1; i < 20; i++)
-		{
-			feedback[0] = inf;
-			feedback[1] = inf;
-			for(int j = 0; j < 4; j++)
-			{
-				CryptoData[] temp = encryptions[j].getCryptoDataArray();
-				feedback[0] = feedback[0].add(temp[0].getECPointData(curve));
-				feedback[1] = feedback[1].add(temp[1].getECPointData(curve));
-				temp = otherEncryptions[j].getCryptoDataArray();
-				feedback[0] = feedback[0].add(temp[0].getECPointData(curve));
-				feedback[1] = feedback[1].add(temp[1].getECPointData(curve));
-			}
-			for(int j = 0; j < 3; j++)
-			{
-				for(int k = 0; k < 5; k++)
-				{
-					keyChanges[j][k] = new BigInteger(bitLength, r);
-					while(keyChanges[j][k].compareTo(order) >= 0)
-						keyChanges[j][k] = new BigInteger(bitLength, r);
-				}
-			}
-			shuffle[0] = shuffle[1] = shuffle[2] = 0;
-			shuffle[r.nextInt(3)] = 2;
-			int pos = r.nextInt(2);
-			if(shuffle[pos] != 0)
-				shuffle[2] = 1;
-			else
-				shuffle[pos] = 1;
-			CryptoData[][] finalTable;
-			CryptoData shufflePInputs;
-			CryptoData shuffleVInputs;
-			if(host == null)
-			{
-				newTable = VarianceToolkit.shuffleTable(table, keyChanges, shuffle, miniEnv);
-				out.writeObject(newTable);
-				shufflePInputs = VarianceToolkit.createZeroKnowledgeProverInputsForShuffle(table, newTable, keyChanges, shuffle, miniEnv, r);
-				finalTable = (CryptoData[][]) in.readObject();
-				
-				shuffleVInputs = VarianceToolkit.createZeroKnowledgeVerifierInputsForShuffle(newTable, finalTable, miniEnv);
-			}
-			else
-			{
-				newTable = (CryptoData[][]) in.readObject();
-				finalTable = VarianceToolkit.shuffleTable(newTable, keyChanges, shuffle, miniEnv);
-				out.writeObject(finalTable);
-				shufflePInputs = VarianceToolkit.createZeroKnowledgeProverInputsForShuffle(newTable, finalTable, keyChanges, shuffle, miniEnv, r);
-				
-				shuffleVInputs = VarianceToolkit.createZeroKnowledgeVerifierInputsForShuffle(table, newTable, miniEnv);
-			}
-			random = new BigInteger(bitLength, r);
-			while(random.compareTo(order) >= 0)
-			{
-				random = new BigInteger(bitLength, r);
-			}
-			c[0] = new BigInteger(bitLength - 1, r);
-			c[1] = random;
-			myCmt = new ECPedersenCommitment(c[0], c[1], miniEnv);
-
-			if(!VarianceToolkit.tableEqualityProver.parallelZKProve(shufflePInputs, shuffleVInputs, shuffleProofEnv, in, out, myCmt, miniEnv, c, null))
-			{
-				System.out.println("CHEATING SHUFFLE");
-			}
-			for(int j = 0; j < 4; j++)
-			{
-				keys[j] = new BigInteger(bitLength, r);
-				while(keys[j].compareTo(order) >= 0)
-					keys[j] = new BigInteger(bitLength, r);
-			}
-			
-			encryptions = VarianceToolkit.createTableCommitments(table[1], keys, ecBits.getMessage().testBit((numBits-1) - i), host == null, miniEnv);
-			pInputs = VarianceToolkit.getTableCoorespondenceProverData(table[1], encryptions, keys, new ECPointData(ecBitComm[(numBits-1) - i].getCommitment(miniEnv)), ecBitKeys[(numBits-1) - i], ecBits.getMessage().testBit((numBits-1) - i), host != null, miniEnv, r);
-			out.writeObject(encryptions);
-			otherEncryptions = (CryptoData[]) in.readObject();
-			vInputs = VarianceToolkit.getTableCoorespondenceVerifierData(table[1], otherEncryptions, new ECPointData(otherECBits[(numBits-1) - i].getCommitment(miniEnv)), host == null, miniEnv);
-
-			random = new BigInteger(bitLength, r);
-			while(random.compareTo(order) >= 0)
-			{
-				random = new BigInteger(bitLength, r);
-			}
-			c[0] = new BigInteger(bitLength - 1, r);
-			c[1] = random;
-			myCmt = new ECPedersenCommitment(c[0], c[1], miniEnv);
-			VarianceToolkit.consistantTableEncryptionProver.parallelZKProve(pInputs, vInputs, tableProofEnv, in, out, myCmt, miniEnv, c, null);
-			//tables are shuffles and proven to be equal!  Now, PET.
-			int row = 0;
-			for(;row < 3;row++)
-			{
-				int x = 0;
-				if(host == null)
-				{
-					x = 1;
-				}
-				try {
-					if(ZKToolkit.plaintextEqualityTest(table[row][0].getCryptoDataArray(), new CryptoDataArray(feedback).getCryptoDataArray(), myPartOfKey, inArray, outArray, miniEnv, -1 + x, 0 - x, r))
-					{
-						break;
-					}
-					
-					
-				} catch (CheaterException e) {
-					System.out.println("CHEATER");
-					e.printStackTrace();
-					System.exit(0);
-				}
-			}
-			if(row == 3) System.out.println("ALL IS LOST!!  THE END IS NEAR!!!");
-			for(int j = 0; j < 4; j++)
-			{
-				keys[j] = new BigInteger(bitLength, r);
-				while(keys[j].compareTo(order) >= 0)
-					keys[j] = new BigInteger(bitLength, r);
-			}
-			
-			
-		}
-		//Decrypt feedback
-		int resultOfComparison;
-		if(host == null)
-		{
-			feedback[0] = ZKToolkit.decryptECElgamal(new CryptoDataArray(feedback), myPartOfKey, miniEnv);
-			out.writeObject(new CryptoDataArray(feedback));
-			resultOfComparison = (int) in.readObject();
-		}
-		else
-		{
-			feedback[0] = ZKToolkit.decryptECElgamal((CryptoData) in.readObject(), myPartOfKey, miniEnv);
-			if(feedback[0].equals(inf)) resultOfComparison = 0;
-			else if(feedback[0].equals(g)) resultOfComparison = -1;
-			else resultOfComparison = 1;
-			out.writeObject(-resultOfComparison);
-		}
-		System.out.println(resultOfComparison);
-
-//		if(verified) System.out.println("Good bit commitment");
-//		else 
-//		{
-//			System.out.println("LIAR BAD BIT COMMITMENT");
-//			System.out.println(transcript.toString());
-//		}
-		
-		out.flush();
-		final long actualEnd = System.currentTimeMillis();
-		System.out.println(counter);
-		System.out.println("My sum is " + sum);
-		if(resultOfComparison == 1) System.out.println("I have MORE HAHAHAHA");
-		if(resultOfComparison == 0) System.out.println("We have equal amounts");
-		if(resultOfComparison == -1) System.out.println("I have less :-(");
-		System.out.println(actualEnd - endTime);
 		
 
 		System.out.println("Total execution time: " + (endTime - startTime) );
 		try {
-			arg0 = new FileWriter("output/Output_" + args[3]);
+			arg0 = new FileWriter("outputs/Output_" + args[3]);
 		} catch (IOException e) {
 			
 			e.printStackTrace();

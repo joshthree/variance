@@ -23,7 +23,7 @@ public class ECPointDecode {
 		s = in.next();
 		if(base == 64)
 		{
-			Decoder decoder = Base64.getDecoder(); 
+			Decoder decoder = Base64.getDecoder();
 			x = new BigInteger(decoder.decode(s));
 		}
 		else {

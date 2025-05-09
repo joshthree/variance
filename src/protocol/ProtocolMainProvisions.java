@@ -367,23 +367,9 @@ public class ProtocolMainProvisions {
 		out.flush();
 		final long endTime = System.currentTimeMillis();
 		System.out.println(counter);
-		out.writeObject(sum);
-		out.writeObject(sumKey);
-		BigInteger otherSum = (BigInteger) in.readObject();
-		BigInteger otherKeySum = (BigInteger) in.readObject();
-		out.flush();
 		commitment1Env[1] = new ECPointData(g);
-		CryptoData commEnv1 = new CryptoDataArray(commitment1Env);
-		if(othersSumCommitment.verifyCommitment(otherSum, otherKeySum, commEnv2))
-		{
-			System.out.println("Good Sum:  He owns " + otherSum + " Bitcoin");
-		}
-		else  
-		{
-			
-			System.out.printf("LIAR:\n\tC = %s\n\tm = %s\n\tr = %s\n\t\n", othersSumCommitment.getCommitment(commEnv1), otherSum, otherKeySum);
-		}
-
+		System.out.println("We have " + sum + " bitcoin.");
+		System.out.println("Proofs accepted.");
 		System.out.println("Total execution time: " + (endTime - startTime) );
 		try {
 			arg0 = new FileWriter("outputs/OutputProvisions_" + args[3]);

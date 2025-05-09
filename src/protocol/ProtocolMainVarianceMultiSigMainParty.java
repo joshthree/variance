@@ -849,6 +849,7 @@ public class ProtocolMainVarianceMultiSigMainParty {
 		{
 			try {
 				friendsOut[i].writeBoolean(true);
+				friendsOut[i].flush();
 				friends[i].setSoTimeout(1000);
 				friendsIn[i].readBoolean();
 			}catch(Exception e) {}
